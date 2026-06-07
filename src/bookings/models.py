@@ -1,10 +1,8 @@
-from datetime import datetime
 from typing import Any, Dict
 
-from sqlalchemy import Column, Integer, BigInteger, DateTime, String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String
 
-from database import Base
+from src.database import Base
 
 
 class User(Base):

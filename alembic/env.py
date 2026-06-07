@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Импортируйте ваши модели и metadata
-from models import Base  # пример импорта Base с metadata
+from src.bookings.models import Base  # пример импорта Base с metadata
 
 config = context.config
 
