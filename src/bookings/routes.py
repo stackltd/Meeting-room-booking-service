@@ -1,4 +1,3 @@
-import uvicorn
 from fastapi import Depends, APIRouter
 
 from src.bookings.schemas import TestSchema
@@ -14,5 +13,4 @@ async def get_user(
     # authorization_token: str = Header(...),
     session=Depends(get_session),
 ):
-    return {"result": {"message": f"Привет {session=}"}}
-
+    return {"message": f"Привет {session=}"}

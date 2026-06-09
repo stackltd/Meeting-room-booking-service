@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Импортируйте ваши модели и metadata
@@ -27,6 +28,7 @@ name = os.getenv("db_name")
 DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@localhost:5433/{name}"
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
+
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")

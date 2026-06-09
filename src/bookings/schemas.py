@@ -4,6 +4,4 @@ from datetime import datetime
 
 
 class TestSchema(BaseModel):
-    result: Dict[str, str] = Field(
-        {}, description="Тестовое сообщение"
-    )
+    message: str

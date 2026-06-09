@@ -15,8 +15,9 @@ logger.level("WARNING", color="<fg 10,190,200>")
 
 
 from src.database import engine, session
-# from src.auth.router import router as auth_router
+from src.auth.routes import router as auth_router
 from src.bookings.routes import router as bookings_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,11 +37,9 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-
-
 app = FastAPI(title="Coworking Booking", lifespan=lifespan)
 
-# app.include_router(auth_router)
+app.include_router(auth_router)
 app.include_router(bookings_router)
 
 
