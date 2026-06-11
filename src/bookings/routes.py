@@ -1,7 +1,9 @@
 from fastapi import Depends, APIRouter
 
 from src.bookings.schemas import TestSchema
-from src.database import get_session
+from src.dependencies import get_session
+
+# from src.database import get_session
 
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])

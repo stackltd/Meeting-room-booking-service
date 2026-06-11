@@ -1,23 +1,13 @@
-import os
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
+from fastapi import HTTPException, status
 
 from src.auth.dao import AuthDAO
+from src.bookings.models import User
+from src.dependencies import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from src.exceptions import CredentialsException
-
-load_dotenv()
-
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-
-# указание на URL для аутентификации
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 class AuthService:
@@ -33,7 +23,7 @@ class AuthService:
         hashed_pwd = AuthService.hash_password(user_data.password)
         user_data_dict.pop("password")
         user_data_dict["password_hash"] = hashed_pwd
-        await AuthDAO.add_user(user_data_dict, db)
+        await AuthDAO.add_object(User, user_data_dict, db)
 
     @classmethod
     def hash_password(cls, password: str) -> str:
@@ -75,17 +65,38 @@ class AuthService:
                 detail="Неверный логин или пароль",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        access_token = AuthService.create_access_token(data={"sub": user.username})
+        # создание токена с зашитым в него username и фрагмента хеша пароля
+        access_token = AuthService.create_access_token(
+            data={"sub": user.username, "pwd_version": user.password_hash[:10]}
+        )
         return access_token
 
     @classmethod
-    def get_username_from_token(cls, token: str = Depends(oauth2_scheme)) -> str:
-        """Используется для защиты роутов от анонимного доступа. Получение username из JWT-токена."""
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            username: str = payload.get("sub")
-            if username is None:
-                raise CredentialsException()
-            return username
-        except jwt.PyJWTError:
-            raise CredentialsException()
+    async def change_password(cls, passwords, current_user, db):
+        if not AuthService.verify_password(
+            passwords.old_password, current_user.password_hash
+        ):
+            raise CredentialsException(detail="Неверный пароль")
+
+        hashed_pwd = AuthService.hash_password(passwords.new_password)
+        data_for_change = dict(password_hash=hashed_pwd)
+        await AuthDAO.change_object(current_user, db, data_for_change)
+
+    @classmethod
+    async def change_user(cls, user_data, db):
+        username = user_data.username
+        user = await AuthService.get_user(username, db)
+        if not user:
+            raise CredentialsException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Пользователь {username} не найден",
+            )
+        data_dict = user_data.model_dump(exclude_unset=True)
+        if user_data.password:
+            hashed_pwd = AuthService.hash_password(user_data.password)
+            data_dict.pop("password")
+            data_dict["password_hash"] = hashed_pwd
+        if user_data.new_username:
+            data_dict.pop("new_username")
+            data_dict["username"] = user_data.new_username
+        await AuthDAO.change_object(user, db, data_dict)

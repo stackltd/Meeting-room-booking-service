@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.schemas import UserCreate
-
-from src.database import get_session
-
+from src.auth.schemas import UserCreate, PasswordChange, UserUpdate
 
 from src.auth.service import AuthService
+from src.dependencies import get_session, get_current_user, get_admin
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -39,12 +37,27 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/test_auth_from_token")
-async def get_secure_data(
-    current_user_username: str = Depends(AuthService.get_username_from_token),
+@router.patch("/change/password")
+async def change_password(
+    passwords: PasswordChange,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
 ):
-    # Тест доступа через JWT."""
+    """Смена пароля текущего пользователя"""
+    await AuthService.change_password(passwords, current_user, db)
+    return {"message": f"Пароль для {current_user.username} успешно изменён"}
+
+
+
+@router.patch("/change/user")
+async def change_user(
+    user_data: UserUpdate,
+    current_user=Depends(get_admin),
+    db: AsyncSession = Depends(get_session),
+):
+    """Изменение данных любого пользователя"""
+    await AuthService.change_user(user_data, db)
+
     return {
-        "message": f"{current_user_username}",
-        "status": "Доступ разрешен",
+        "message": f"{current_user.username} успешно изменил данные пользователя {user_data.username}"
     }

@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
         yield
     except (ConnectionRefusedError, ConnectionError, CannotConnectNowError) as ex:
         logger.error(ex)
-        logger.info("Ждем окончания инициализации базы данных")
+        logger.info("Ждем завершения инициализации базы данных")
         time.sleep(10)
         yield
     logger.info("Shutdown")
