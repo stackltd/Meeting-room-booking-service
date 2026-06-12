@@ -1,7 +1,24 @@
-from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 
-class TestSchema(BaseModel):
-    message: str
+class UserGet(BaseModel):
+    id: int
+    username: str
+    name: str | None = None
+    role: str
+
+    # интеграция с SQLAlchemy
+    class Config:
+        from_attributes = True
+
+
+class RoomBase(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class RoomGet(RoomBase):
+    id: int
+
+    class Config:
+        from_attributes = True

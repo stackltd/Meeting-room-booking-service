@@ -1,26 +1,24 @@
 from typing import Any, Dict
 
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(20), unique=True, nullable=False)
-    password_hash = Column(String(200), nullable=False)
-    name = Column(String(100), default="", nullable=False)
-    role = Column(String(20), default="employee", nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    role: Mapped[str] = mapped_column(String(20), default="employee", nullable=False)
 
-    # def __getitem__(self, point):
-    #     return getattr(self, point)
-    #
-    # def to_json(self) -> Dict[str, Any]:
-    #     result_json = {
-    #         column.name: getattr(self, column.name)
-    #         for column in self.__table__.columns
-    #         if column.name != "id"
-    #     }
-    #     return {"user": result_json}
+
+class Room(Base):
+    __tablename__ = "rooms"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
