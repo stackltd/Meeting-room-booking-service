@@ -17,6 +17,7 @@ logger.level("WARNING", color="<fg 10,190,200>")
 from src.database import engine, session
 from src.auth.routes import router as auth_router
 from src.bookings.routes import router as bookings_router
+from src.users.routes import router as users_router
 
 
 @asynccontextmanager
@@ -41,8 +42,10 @@ app = FastAPI(title="Coworking Booking", lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(bookings_router)
+app.include_router(users_router)
 
 
 if __name__ == "__main__":
+    # uvicorn src.main:app --reload --port 8989
     port = 8989
     uvicorn.run("main:app", port=port)

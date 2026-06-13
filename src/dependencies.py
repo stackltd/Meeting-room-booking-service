@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bookings.models import User
+from src.users.models import User
 from src.dao import DAO
 from src.database import AsyncSessionLocal
 from src.exceptions import CredentialsException
@@ -28,13 +28,11 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_session)
 ):
     """Используется для защиты роутов от анонимного доступа. Получение текущего user от username из JWT-токена."""
-    from src.bookings.service import BookingsService
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_pwd_version = payload.get("pwd_version")
         username: str = payload.get("sub")
-        user: User = await DAO.search_by_field(User, dict(username=username), db)
+        user: User = await DAO.search_by_fields(User, dict(username=username), db)
         if username is None or user is None:
             raise CredentialsException()
 

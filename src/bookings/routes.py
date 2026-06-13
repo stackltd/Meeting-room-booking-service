@@ -1,68 +1,23 @@
-from typing import List
+from datetime import date
 
-from fastapi import Depends, APIRouter, Path
+from fastapi import Depends, APIRouter, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
-from src.bookings.models import Room, User
-from src.bookings.schemas import UserGet, RoomBase, RoomGet
+from src.bookings.models import Room
+from src.users.models import User
+from src.bookings.schemas import (
+    RoomBase,
+    RoomGet,
+    BookingCreate,
+    UserWithBookingsGet,
+    RoomWithFreeSlotsGet,
+)
 from src.bookings.service import BookingsService
 from src.dao import DAO
 from src.dependencies import get_session, get_admin, get_current_user
-from src.exceptions import CredentialsException
 
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
-
-
-@router.get(
-    "/users/me",
-    description="Профиль пользователя",
-    response_model=UserGet,
-)
-async def get_profile(
-    current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
-):
-    user = await DAO.search_by_field(User, dict(username=current_user.username), db)
-
-    return user
-
-
-@router.get(
-    "/users/{username}",
-    description="Поиск пользователя по его username",
-    response_model=UserGet,
-)
-async def get_user(
-    username: str = Path(...),
-    current_user=Depends(get_admin),
-    db: AsyncSession = Depends(get_session),
-):
-    user = await DAO.search_by_field(User, dict(username=username), db)
-    if not user:
-        raise CredentialsException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Пользователь {username} не найден",
-        )
-
-    return user
-
-
-@router.get(
-    "/users", description="Поиск всех пользователей", response_model=List[UserGet]
-)
-async def get_users(
-    current_user=Depends(get_admin), db: AsyncSession = Depends(get_session)
-):
-    users = await DAO.search_all(User, db)
-    if not users:
-        raise CredentialsException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Пользователи не найдены",
-        )
-
-    return users
 
 
 @router.post("/rooms", description="Создание комнаты")
@@ -71,27 +26,51 @@ async def room_create(
     current_user=Depends(get_admin),
     db: AsyncSession = Depends(get_session),
 ):
-    name = room_data.name
-    room = await DAO.search_by_field(Room, dict(name=name), db)
-    if room:
-        raise CredentialsException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Ошибка. Комната {name} уже существует",
-        )
-    data_dict = room_data.model_dump(exclude_none=True)
-    await DAO.add_object(Room, data_dict, db)
-    return {"message": f"Комната {name} успешно создана"}
+    await BookingsService.room_create(room_data, db)
+    return {"message": f"Комната {room_data.name} успешно создана"}
 
 
-@router.get("/rooms", description="Поиск всех комнат", response_model=List[RoomGet])
-async def get_rooms(
+@router.get("/rooms", description="Поиск всех комнат", response_model=list[RoomGet])
+async def get_rooms(db: AsyncSession = Depends(get_session)):
+    rooms = await DAO.search_all(Room, db)
+    return rooms
+
+
+@router.post("")
+async def create_booking(
+    booking_data: BookingCreate,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    await BookingsService.create_booking(booking_data, current_user, db)
+    return {
+        "message": f"Комната {booking_data.room_id} забронирована на дату {booking_data.booking_date} на интервал {booking_data.time_slot}"
+    }
+
+
+@router.delete("/{booking_id}")
+async def cancel_booking(
+    booking_id: int,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    await BookingsService.cancel_booking(booking_id, current_user, db)
+
+    return {"status": "success", "message": "Бронирование успешно отменено"}
+
+
+@router.get("/users-current-bookings", response_model=list[UserWithBookingsGet])
+async def get_active_users(
     current_user=Depends(get_admin), db: AsyncSession = Depends(get_session)
 ):
-    rooms = await DAO.search_all(Room, db)
-    if not rooms:
-        raise CredentialsException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Комнаты не найдены",
-        )
+    users = await DAO.get_users_with_active_bookings(db)
+    return users
 
+
+@router.get("/room-available", response_model=list[RoomWithFreeSlotsGet])
+async def get_available_rooms(
+    booking_date: date = Query(..., description="Дата проверки (YYYY-MM-DD)"),
+    db: AsyncSession = Depends(get_session),
+):
+    rooms = await BookingsService.get_available_rooms(booking_date, db)
     return rooms

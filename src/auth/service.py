@@ -2,11 +2,10 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import HTTPException, status
+from fastapi import status
 
-from src.bookings.service import BookingsService
 from src.dao import DAO
-from src.bookings.models import User
+from src.users.models import User
 from src.dependencies import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from src.exceptions import CredentialsException
 
@@ -15,6 +14,14 @@ class AuthService:
 
     @classmethod
     async def make_user(cls, user_data, db):
+        """Создание пользователя"""
+        user = await DAO.search_by_fields(User, dict(username=user_data.username), db)
+        username = user_data.username
+        if user:
+            raise CredentialsException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ошибка. Пользователь {username} уже существует",
+            )
         user_data_dict = user_data.model_dump(exclude_none=True)
         hashed_pwd = cls.hash_password(user_data.password)
         user_data_dict.pop("password")
@@ -50,14 +57,12 @@ class AuthService:
 
     @classmethod
     async def make_token(cls, form_data, db):
-
-        # проверка существования пользователя с username
-        user = await DAO.search_by_field(User, dict(username=form_data.username), db)
+        """проверка существования пользователя с username"""
+        user = await DAO.search_by_fields(User, dict(username=form_data.username), db)
         if not user or not cls.verify_password(form_data.password, user.password_hash):
-            raise HTTPException(
+            raise CredentialsException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Неверный логин или пароль",
-                headers={"WWW-Authenticate": "Bearer"},
             )
         # создание токена с зашитым в него username и фрагмента хеша пароля
         access_token = cls.create_access_token(
@@ -77,7 +82,7 @@ class AuthService:
     @classmethod
     async def change_user(cls, user_data, db):
         username = user_data.username
-        user = await DAO.search_by_field(User, dict(username=username), db)
+        user = await DAO.search_by_fields(User, dict(username=username), db)
         if not user:
             raise CredentialsException(
                 status_code=status.HTTP_404_NOT_FOUND,
