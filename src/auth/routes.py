@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,12 +12,16 @@ from src.dependencies import get_session, get_current_user, get_admin
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+logger = logging.getLogger("app")
+
 
 @router.post("/register")
 async def register_user(user_data: UserCreate, db: AsyncSession = Depends(get_session)):
     """Регистрация нового пользователя."""
     await AuthService.make_user(user_data, db)
-    return {"message": f"Пользователь {user_data.username} успешно зарегистрирован"}
+    message = f"Пользователь {user_data.username} успешно зарегистрирован"
+    logger.info(message)
+    return {"message": message}
 
 
 @router.post("/login")
@@ -36,7 +42,9 @@ async def change_password(
 ):
     """Смена пароля текущего пользователя"""
     await AuthService.change_password(passwords, current_user, db)
-    return {"message": f"Пароль для {current_user.username} успешно изменён"}
+    message = f"Пароль для {current_user.username} успешно изменён"
+    logger.info(message)
+    return {"message": message}
 
 
 @router.patch("/change/user")
@@ -47,7 +55,6 @@ async def change_user(
 ):
     """Изменение данных любого пользователя"""
     await AuthService.change_user(user_data, db)
-
-    return {
-        "message": f"{current_user.username} успешно изменил данные пользователя {user_data.username}"
-    }
+    message = f"{current_user.username} успешно изменил данные пользователя {user_data.username}"
+    logger.info(message)
+    return {"message": message}

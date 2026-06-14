@@ -1,11 +1,13 @@
+import logging
 from datetime import date
-
 from starlette import status
 
 from src.bookings.models import Room, Booking
 from src.dao import DAO
 from src.exceptions import CredentialsException
 from src.settings import ALLOWED_SLOTS
+
+logger = logging.getLogger("app")
 
 
 class BookingsService:
@@ -15,9 +17,11 @@ class BookingsService:
         name = room_data.name
         room = await DAO.search_by_fields(Room, dict(name=name), db)
         if room:
+            message = f"Ошибка. Комната {name} уже существует"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Ошибка. Комната {name} уже существует",
+                detail=message,
             )
         data_dict = room_data.model_dump(exclude_none=True)
         await DAO.add_object(Room, data_dict, db)
@@ -28,16 +32,18 @@ class BookingsService:
             Room, dict(id=booking_data.room_id), db
         )
         if not room_exists:
-            raise CredentialsException(
-                status_code=404, detail="Ошибка. Указанная комната не найдена"
-            )
+            message = "Ошибка. Указанная комната не найдена"
+            logger.warning(message)
+            raise CredentialsException(status_code=404, detail=message)
         # проверка занятости комнаты на указанные дату и слот
         data_dict = booking_data.model_dump(exclude_none=True)
         existing_booking = await DAO.search_by_fields(Booking, data_dict, db)
         if existing_booking:
+            message = "Ошибка. Этот временной слот на выбранную дату уже забронирован"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Ошибка. Этот временной слот на выбранную дату уже забронирован",
+                detail=message,
             )
 
         # создание связи user-room на указанные дату и слот
@@ -50,14 +56,16 @@ class BookingsService:
 
         booking = await DAO.search_by_fields(Booking, dict(id=booking_id), db)
         if not booking:
-            raise CredentialsException(
-                status_code=404, detail="Ошибка. Бронирование не найдено"
-            )
+            message = "Ошибка. Бронирование не найдено"
+            logger.warning(message)
+            raise CredentialsException(status_code=404, detail=message)
 
         if current_user.role != "admin" and booking.user_id != current_user.id:
+            message = "Доступ к чужим бронированиям запрещен"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Доступ к чужим бронированиям запрещен",
+                detail=message,
             )
 
         await DAO.delete_object(booking, db)
@@ -66,9 +74,11 @@ class BookingsService:
     async def get_available_rooms(cls, booking_date, db):
 
         if booking_date < date.today():
+            message = "Ошибка. Дата не актуальна"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ошибка. Дата не актуальна",
+                detail=message,
             )
         rooms = await DAO.get_rooms_to_date(booking_date, db)
         # список комнат с доступными слотами

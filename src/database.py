@@ -1,9 +1,8 @@
 import os
-from typing import AsyncGenerator
 
 from dotenv import find_dotenv, load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 load_dotenv(find_dotenv())
 
@@ -14,10 +13,6 @@ name = os.getenv("db_name")
 # для подключения к контейнеру с postgres, но через приложение снаружи
 DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@localhost:5433/{name}"
 
-# использовать для тестирования с портом 5433
-# DATABASE_URL = "postgresql+asyncpg://admin:admin@localhost:5433/coworking"
-
-
 # использовать для сборки контейнера с приложением fastapi
 # DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@postgres:5432/{name}"
 
@@ -27,4 +22,7 @@ AsyncSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     engine, expire_on_commit=False, class_=AsyncSession
 )
 session = AsyncSessionLocal()
-Base = declarative_base()
+
+
+class Base(DeclarativeBase):
+    pass

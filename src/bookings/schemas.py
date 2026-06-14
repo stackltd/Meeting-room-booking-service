@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from src.settings import ALLOWED_SLOTS
 
@@ -11,10 +11,9 @@ class RoomBase(BaseModel):
 
 
 class RoomGet(RoomBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int
 
 
 class BookingCreate(BaseModel):
@@ -41,31 +40,28 @@ class BookingCreate(BaseModel):
 
 
 class UserBookingInUserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     room_id: int
     booking_date: date
     time_slot: str
 
-    class Config:
-        from_attributes = True
-
 
 class UserWithBookingsGet(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     name: str | None
     role: str
     bookings: list[UserBookingInUserSchema]
 
-    class Config:
-        from_attributes = True
-
 
 class RoomWithFreeSlotsGet(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: str | None = None
     free_slots: list[str]
-
-    class Config:
-        from_attributes = True

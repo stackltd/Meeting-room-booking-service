@@ -1,23 +1,20 @@
-import sys
+import logging
 import time
 from contextlib import asynccontextmanager
 
 import uvicorn
 from asyncpg.exceptions import CannotConnectNowError
 from fastapi import FastAPI
-from loguru import logger
 
-
-logger.remove()
-format_out = "{module} <green>{time:DD-MM-YYYY HH:mm:ss}</green> {level} <level>{message}</level>"
-logger.add(sys.stdout, format=format_out, level="INFO", colorize=True)
-logger.level("WARNING", color="<fg 10,190,200>")
-
-
+from src.logger import setup_logging
 from src.database import engine, session
 from src.auth.routes import router as auth_router
 from src.bookings.routes import router as bookings_router
 from src.users.routes import router as users_router
+
+setup_logging()
+
+logger = logging.getLogger("app")
 
 
 @asynccontextmanager

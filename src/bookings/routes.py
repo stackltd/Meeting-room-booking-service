@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from fastapi import Depends, APIRouter, Query
@@ -19,6 +20,8 @@ from src.dependencies import get_session, get_admin, get_current_user
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
+logger = logging.getLogger("app")
+
 
 @router.post("/rooms", description="Создание комнаты")
 async def room_create(
@@ -26,12 +29,14 @@ async def room_create(
     current_user=Depends(get_admin),
     db: AsyncSession = Depends(get_session),
 ):
+    """Создание комнаты"""
     await BookingsService.room_create(room_data, db)
     return {"message": f"Комната {room_data.name} успешно создана"}
 
 
 @router.get("/rooms", description="Поиск всех комнат", response_model=list[RoomGet])
 async def get_rooms(db: AsyncSession = Depends(get_session)):
+    """Поиск всех комнат"""
     rooms = await DAO.search_all(Room, db)
     return rooms
 
@@ -42,10 +47,11 @@ async def create_booking(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    """Бронирование на указанную дату и временной слот"""
     await BookingsService.create_booking(booking_data, current_user, db)
-    return {
-        "message": f"Комната {booking_data.room_id} забронирована на дату {booking_data.booking_date} на интервал {booking_data.time_slot}"
-    }
+    message = f"Комната {booking_data.room_id} забронирована на дату {booking_data.booking_date} на интервал {booking_data.time_slot}"
+    logger.info(message)
+    return {"message": message}
 
 
 @router.delete("/{booking_id}")
@@ -54,8 +60,8 @@ async def cancel_booking(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    """Отмена бронирования"""
     await BookingsService.cancel_booking(booking_id, current_user, db)
-
     return {"status": "success", "message": "Бронирование успешно отменено"}
 
 
@@ -63,6 +69,7 @@ async def cancel_booking(
 async def get_active_users(
     current_user=Depends(get_admin), db: AsyncSession = Depends(get_session)
 ):
+    """Поиск пользователей с активными бронями"""
     users = await DAO.get_users_with_active_bookings(db)
     return users
 
@@ -72,5 +79,6 @@ async def get_available_rooms(
     booking_date: date = Query(..., description="Дата проверки (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_session),
 ):
+    """Поиск комнат, доступных для бронирования"""
     rooms = await BookingsService.get_available_rooms(booking_date, db)
     return rooms

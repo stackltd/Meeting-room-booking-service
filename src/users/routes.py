@@ -19,6 +19,7 @@ async def get_profile(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
+    """Профиль текущего пользователя"""
     user = await DAO.search_by_fields(User, dict(username=current_user.username), db)
     return user
 
@@ -33,6 +34,7 @@ async def get_user(
     current_user=Depends(get_admin),
     db: AsyncSession = Depends(get_session),
 ):
+    """Профиль произвольного пользователя"""
     user = await UserService.search_user(username, db)
     return user
 
@@ -41,5 +43,6 @@ async def get_user(
 async def get_users(
     current_user=Depends(get_admin), db: AsyncSession = Depends(get_session)
 ):
+    """Получить всех пользователей"""
     users = await DAO.search_all(User, db)
     return users

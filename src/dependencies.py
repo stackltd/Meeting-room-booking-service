@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import AsyncGenerator
 
@@ -18,6 +19,8 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
+logger = logging.getLogger("app")
+
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
@@ -34,13 +37,17 @@ async def get_current_user(
         username: str = payload.get("sub")
         user: User = await DAO.search_by_fields(User, dict(username=username), db)
         if username is None or user is None:
+            logger.warning("Не удалось валидировать учетные данные")
             raise CredentialsException()
 
         if user.password_hash[:10] != token_pwd_version:
-            raise CredentialsException(detail="Пароль был изменен. Войдите заново.")
+            message = "Пароль был изменен. Войдите заново"
+            logger.warning(message)
+            raise CredentialsException(detail=message)
 
         return user
     except jwt.PyJWTError:
+        logger.warning("Не удалось валидировать учетные данные")
         raise CredentialsException()
 
 

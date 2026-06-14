@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -9,6 +10,8 @@ from src.users.models import User
 from src.dependencies import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
 from src.exceptions import CredentialsException
 
+logger = logging.getLogger("app")
+
 
 class AuthService:
 
@@ -18,9 +21,11 @@ class AuthService:
         user = await DAO.search_by_fields(User, dict(username=user_data.username), db)
         username = user_data.username
         if user:
+            message = f"Ошибка. Пользователь {username} уже существует"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Ошибка. Пользователь {username} уже существует",
+                detail=message,
             )
         user_data_dict = user_data.model_dump(exclude_none=True)
         hashed_pwd = cls.hash_password(user_data.password)
@@ -60,9 +65,11 @@ class AuthService:
         """проверка существования пользователя с username"""
         user = await DAO.search_by_fields(User, dict(username=form_data.username), db)
         if not user or not cls.verify_password(form_data.password, user.password_hash):
+            message = "Неверный логин или пароль"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный логин или пароль",
+                detail=message,
             )
         # создание токена с зашитым в него username и фрагмента хеша пароля
         access_token = cls.create_access_token(
@@ -73,7 +80,9 @@ class AuthService:
     @classmethod
     async def change_password(cls, passwords, current_user, db):
         if not cls.verify_password(passwords.old_password, current_user.password_hash):
-            raise CredentialsException(detail="Неверный пароль")
+            message = "Неверный пароль"
+            logger.warning(message)
+            raise CredentialsException(detail=message)
 
         hashed_pwd = cls.hash_password(passwords.new_password)
         data_for_change = dict(password_hash=hashed_pwd)
@@ -84,9 +93,11 @@ class AuthService:
         username = user_data.username
         user = await DAO.search_by_fields(User, dict(username=username), db)
         if not user:
+            message = f"Пользователь {username} не найден"
+            logger.warning(message)
             raise CredentialsException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Пользователь {username} не найден",
+                detail=message,
             )
         data_dict = user_data.model_dump(exclude_unset=True)
         if user_data.password:
