@@ -1,7 +1,7 @@
 from datetime import date
 
 from sqlalchemy import select
-from sqlalchemy.orm import contains_eager, selectinload
+from sqlalchemy.orm import contains_eager, selectinload, defer
 
 from src.bookings.models import Booking, Room
 from src.users.models import User
@@ -39,18 +39,22 @@ class DAO:
         await db.commit()
 
     @classmethod
-    async def get_users_with_active_bookings(cls, db):
+    async def get_users_with_active_bookings(cls, filter_dict: dict, db):
         today = date.today()
         query = (
             select(User)
             .join(User.bookings)
+            .where(*(getattr(User, key) == val for key, val in filter_dict.items()))
             .where(Booking.booking_date >= today)
-            # получение в user.bookings результата фильтрации
-            .options(contains_eager(User.bookings))
+            .options(contains_eager(User.bookings), defer(User.password_hash))
             .order_by(User.id)
         )
         result = await db.execute(query)
-        return result.scalars().unique().all()
+
+        if not filter_dict:
+            return result.scalars().unique().all()
+
+        return result.scalars().unique().one_or_none()
 
     @classmethod
     async def get_rooms_to_date(cls, booking_date: date, db):

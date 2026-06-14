@@ -70,8 +70,17 @@ async def get_active_users(
     current_user=Depends(get_admin), db: AsyncSession = Depends(get_session)
 ):
     """Поиск пользователей с активными бронями"""
-    users = await DAO.get_users_with_active_bookings(db)
+    users = await DAO.get_users_with_active_bookings({}, db)
     return users
+
+
+@router.get("/me", response_model=UserWithBookingsGet)
+async def get_my_active_bookings(
+    current_user=Depends(get_current_user), db: AsyncSession = Depends(get_session)
+):
+    """Поиск пользователя с активными бронями"""
+    user = await BookingsService.get_my_active_bookings(current_user, db)
+    return user
 
 
 @router.get("/room-available", response_model=list[RoomWithFreeSlotsGet])

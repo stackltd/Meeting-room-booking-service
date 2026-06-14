@@ -100,3 +100,16 @@ class BookingsService:
             )
 
         return rooms_with_slots
+
+    @classmethod
+    async def get_my_active_bookings(cls, current_user, db):
+        user = await DAO.get_users_with_active_bookings(dict(id=current_user.id), db)
+        if user is None:
+            return {
+                "id": current_user.id,
+                "username": current_user.username,
+                "name": current_user.name,
+                "role": current_user.role,
+                "bookings": [],
+            }
+        return user

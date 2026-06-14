@@ -104,7 +104,21 @@ class AuthService:
             hashed_pwd = cls.hash_password(user_data.password)
             data_dict.pop("password")
             data_dict["password_hash"] = hashed_pwd
+
         if user_data.new_username:
+            # проверяем, существует ли уже в базе new_username
+            check_user_with_new_username = await DAO.search_by_fields(
+                User, dict(username=user_data.new_username), db
+            )
+            if check_user_with_new_username:
+                new_username = check_user_with_new_username.username
+                message = f"Ошибка. Пользователь {new_username} уже существует"
+                logger.warning(message)
+                raise CredentialsException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=message,
+                )
+
             data_dict.pop("new_username")
             data_dict["username"] = user_data.new_username
         await DAO.change_object(user, db, data_dict)
