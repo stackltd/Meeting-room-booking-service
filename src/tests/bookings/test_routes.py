@@ -6,6 +6,11 @@ from httpx import AsyncClient
 from src.bookings.models import Room, Booking
 from src.tests.conftest import create_test_user, cancel_booking
 
+# Календарные даты для тестов активных/неактивных бронирований
+TODAY = date.today()
+TOMORROW = TODAY + timedelta(days=1)
+YESTERDAY = TODAY - timedelta(days=1)
+
 
 @pytest.mark.asyncio
 async def test_create_booking(authenticated_client: AsyncClient, session):
@@ -79,12 +84,6 @@ async def test_cancel_someone_booking_as_employee(
 
     assert response.status_code == 403
     assert "запрещен" in response.text
-
-
-# Календарные даты для тестов активных/неактивных бронирований
-TODAY = date.today()
-TOMORROW = TODAY + timedelta(days=1)
-YESTERDAY = TODAY - timedelta(days=1)
 
 
 @pytest.mark.asyncio

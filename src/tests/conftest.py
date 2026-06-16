@@ -52,7 +52,7 @@ async def client():
     ) as ac:
         yield ac
 
-    # Очищаем подмену после теста
+    # Очистка подмены после теста
     app.dependency_overrides.clear()
 
 

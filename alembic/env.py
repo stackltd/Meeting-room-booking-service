@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Импортируйте ваши модели и metadata
-from src.bookings.models import Base  # пример импорта Base с metadata
+from src.bookings.models import Base
 
 config = context.config
 
@@ -24,8 +23,11 @@ target_metadata = Base.metadata
 login = os.getenv("db_login")
 password = os.getenv("db_password")
 name = os.getenv("db_name")
+db_host = os.getenv("db_host")
 
-DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@localhost:5433/{name}"
+
+db_port = int(os.getenv("db_port"))
+DATABASE_URL = f"postgresql+asyncpg://{login}:{password}@{db_host}:{db_port}/{name}"
 
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 

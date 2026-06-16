@@ -30,7 +30,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def get_current_user(
     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_session)
 ):
-    """Используется для защиты роутов от анонимного доступа. Получение текущего user от username из JWT-токена."""
+    """Зависимость для защиты роутов от анонимного доступа. Получение текущего user от username из JWT-токена."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_pwd_version = payload.get("pwd_version")
@@ -54,7 +54,7 @@ async def get_current_user(
 async def get_admin(
     token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_session)
 ):
-    """Проверка на роль 'admin'"""
+    """Зависимость для проверки на роль 'admin'"""
     user: User = await get_current_user(token, db)
     if user.role != "admin":
         raise CredentialsException(detail="Доступ запрещён")

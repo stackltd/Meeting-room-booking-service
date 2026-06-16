@@ -7,7 +7,7 @@ from asyncpg.exceptions import CannotConnectNowError
 from fastapi import FastAPI
 
 from src.logger import setup_logging
-from src.database import engine, session
+from src.database import engine, session, Base
 from src.auth.routes import router as auth_router
 from src.bookings.routes import router as bookings_router
 from src.users.routes import router as users_router
@@ -43,6 +43,5 @@ app.include_router(users_router)
 
 
 if __name__ == "__main__":
-    # uvicorn src.main:app --reload --port 8989
     port = 8989
     uvicorn.run("main:app", port=port)
