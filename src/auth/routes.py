@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 logger = logging.getLogger("app")
 
 
-@router.post("/register")
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserCreate, db: AsyncSession = Depends(get_session)):
     """Регистрация нового пользователя."""
     await AuthService.make_user(user_data, db)

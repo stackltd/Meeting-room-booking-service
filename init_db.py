@@ -41,8 +41,11 @@ async def seed_data():
         rooms = result.scalars().all()
 
         if not rooms:
-            room1 = Room(name="Большая переговорная")
-            room2 = Room(name="Малая переговорная")
+            room1 = Room(
+                name="Переговорная 1",
+                description="Зал для презентаций и видеоконференций — с видеокамерой, микрофонами, экраном и Wi-Fi",
+            )
+            room2 = Room(name="Переговорная 2", description="Стандарт на 6–8 человек")
             session.add_all([room1, room2])
             await session.flush()
         else:

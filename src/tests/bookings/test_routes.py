@@ -14,7 +14,8 @@ YESTERDAY = TODAY - timedelta(days=1)
 
 @pytest.mark.asyncio
 async def test_create_booking(authenticated_client: AsyncClient, session):
-    """Создание комнаты с id=1 в тестовой БД"""
+    """Создание бронирования"""
+    # Создание комнаты с id=1 в тестовой БД
     test_room = Room(id=1, name="Переговорная 5")
     session.add(test_room)
     await session.commit()
@@ -24,13 +25,14 @@ async def test_create_booking(authenticated_client: AsyncClient, session):
         json={"room_id": 1, "booking_date": "2028-06-15", "time_slot": "09:00-11:00"},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert "забронирована" in response.text
 
 
 @pytest.mark.asyncio
 async def test_create_double_booking(authenticated_client: AsyncClient, session):
-    """Создание комнаты в тестовой БД"""
+    """Попытка двойного бронирования"""
+    # Создание комнаты в тестовой БД
     test_room = Room(id=1, name="Переговорная 5")
     session.add(test_room)
 

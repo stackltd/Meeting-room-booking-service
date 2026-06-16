@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 
-from fastapi import Depends, APIRouter, Query
+from fastapi import Depends, APIRouter, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.bookings.models import Room
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 logger = logging.getLogger("app")
 
 
-@router.post("/rooms", description="Создание комнаты")
+@router.post("/rooms", description="Создание комнаты", status_code=status.HTTP_201_CREATED)
 async def room_create(
     room_data: RoomBase,
     current_user=Depends(get_admin),
@@ -41,7 +41,7 @@ async def get_rooms(db: AsyncSession = Depends(get_session)):
     return rooms
 
 
-@router.post("")
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_booking(
     booking_data: BookingCreate,
     db: AsyncSession = Depends(get_session),

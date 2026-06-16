@@ -15,7 +15,7 @@ async def test_create_user(client: AsyncClient):
         json={"username": "test_user", "password": "123456asdZXC*"},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert "успешно" in response.text
 
 

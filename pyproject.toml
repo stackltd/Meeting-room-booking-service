@@ -3,7 +3,7 @@ name = "meeting-room-booking-service"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Evgeny Fedorov",email = "stackltd@yandex.ru"}
+    {name = "Your Name",email = "you@example.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.12"
